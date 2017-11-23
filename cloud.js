@@ -6,3 +6,8 @@ var AV = require('leanengine');
 AV.Cloud.define('hello', function(request) {
   return 'Hello world!';
 });
+
+
+AV.Cloud.afterUpdate('Rooms', function(reuqest) {
+	console.log('Updated room,the id is :' + request.object.id);
+});
