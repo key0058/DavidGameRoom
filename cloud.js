@@ -28,7 +28,7 @@ AV.Cloud.define('updatePlayerRoomId', function(request) {
 /**
  * David game room leancloud hooks
  */
-AV.Cloud.beforeUpdate('Players', function(request) {
+AV.Cloud.beforeUpdate('Players', function(request, response) {
 	if (request.object.updatedKeys.indexOf('roomId') != -1) {
 		var roomId = request.object.get('roomId');
 
@@ -41,14 +41,14 @@ AV.Cloud.beforeUpdate('Players', function(request) {
 				var query = new AV.Query('Players');
 				query.equalTo('roomId', roomId);
 				query.count().then(function(count) {
-					console.log("Room " + roomId + " total had " + count + " players");
+					response.Success("Room " + roomId + " total had " + count + " players");
 				});
 			} else {
 				console.log('+++++ no room id +++++');
-				throw new AV.Cloud.Error("Room " + roomId + " is not exists!");
+				response.Error("Room " + roomId + " is not exists!");
 			}
 		}, function(error) {
-			throw new AV.Cloud.Error('Before update players had error: ' + error);
+			response.Error('Before update players had error: ' + error);
 		});
 	}
 });
