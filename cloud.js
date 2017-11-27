@@ -53,43 +53,43 @@ AV.Cloud.define('updatePlayerRoomId', function(request) {
 /**
  * David game room leancloud hooks
  */
-AV.Cloud.afterUpdate('Players', function(request) {
-	/*
-	 * If players status all ready and change room status to READY by id
-	 */
-	if (request.object.updatedKeys.indexOf('status') != -1) {
-		var roomStatus;
-		var totalPlayers, totalReadys;
-		var roomId = request.object.get('roomId');
-		var query = new AV.Query('Players');
-		query.equalTo('roomId', roomId);
-		query.count().then(function(count) {
-			totalPlayers = count;
+// AV.Cloud.afterUpdate('Players', function(request) {
+// 	/*
+// 	 * If players status all ready and change room status to READY by id
+// 	 */
+// 	if (request.object.updatedKeys.indexOf('status') != -1) {
+// 		var roomStatus;
+// 		var totalPlayers, totalReadys;
+// 		var roomId = request.object.get('roomId');
+// 		var query = new AV.Query('Players');
+// 		query.equalTo('roomId', roomId);
+// 		query.count().then(function(count) {
+// 			totalPlayers = count;
 
-			query.equalTo('status', 'READY');
-			query.count().then(function(readyCount) {
-				totalReadys = readyCount;
+// 			query.equalTo('status', 'READY');
+// 			query.count().then(function(readyCount) {
+// 				totalReadys = readyCount;
 
-				console.log("Total players " + totalPlayers + ", total ready:" + totalReadys + " in room " + roomId);
-				if (totalPlayers == totalReadys) {
-					roomStatus = 'READY';
-				} else {
-					roomStatus = 'WAIT';
-				}
-				var roomQuery = new AV.Query('Rooms');
-				roomQuery.get(roomId).then(function(room) {
-					room.set('status', roomStatus);
-					room.save();
-					console.log("Update room " + roomId + " status to " + roomStatus + "!")
-				}, function(error) {
-					console.error(error);
-				});
-			});
-		});
-	}
-});
+// 				console.log("Total players " + totalPlayers + ", total ready:" + totalReadys + " in room " + roomId);
+// 				if (totalPlayers == totalReadys) {
+// 					roomStatus = 'READY';
+// 				} else {
+// 					roomStatus = 'WAIT';
+// 				}
+// 				var roomQuery = new AV.Query('Rooms');
+// 				roomQuery.get(roomId).then(function(room) {
+// 					room.set('status', roomStatus);
+// 					room.save();
+// 					console.log("Update room " + roomId + " status to " + roomStatus + "!")
+// 				}, function(error) {
+// 					console.error(error);
+// 				});
+// 			});
+// 		});
+// 	}
+// });
 
 
-AV.Cloud.afterUpdate('Rooms', function(request) {
-	console.log('Updated room,the id is :' + request.object.id);
-});
+// AV.Cloud.afterUpdate('Rooms', function(request) {
+// 	console.log('Updated room,the id is :' + request.object.id);
+// });
