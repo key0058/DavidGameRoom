@@ -19,33 +19,28 @@ AV.Cloud.define('updatePlayerRoomId', function(request) {
 
 	var roomQuery = new AV.Query('Rooms');
 	roomQuery.equalTo('objectId', roomId);
-	return roomQuery.find().then(function(results) {
-		if (results.length > 0) {
-			var room = results[0];
-			if (room.get('status') == 'WAIT') {
-				var playerQuery = new AV.Query('Players');
-				playerQuery.equalTo('roomId', roomId);
-				return playerQuery.count().then(function(count) {
-					if (count < 3) {
-						var sql = 'UPDATE Players set roomId = "' + request.params.roomId  + '" where objectId = "' + request.params.playerId  + '"'
-						return AV.Query.doCloudQuery(sql).then(function(data) {
-							console.log('SQL: ' + sql);
-							return "SUCCESS";
-						}, function(error) {
-							throw new AV.Cloud.Error("Update player happen error: " + error);
-						});
-					} else {
-						throw new AV.Cloud.Error("Room already full!");
-					}
-				});
-			}
-		} else {
-			throw new AV.Cloud.Error("Room " + roomId + " is not exists!")
+	return roomQuery.first().then(function(room) {
+		if (room.get('status') == 'IDLE') {
+			var playerQuery = new AV.Query('Players');
+			playerQuery.equalTo('roomId', roomId);
+			return playerQuery.count().then(function(count) {
+				if (count < 3) {
+					var query = new AV.Query('Players');
+					query.equalTo('userId', playerId);
+					return query.first().then(function(player) {
+						player.set('roomId', roomId);
+						if (player.get('status') != "BANK") {
+							player.set('status', "IDLE");	
+						}
+						player.save();
+						return "SUCCESS";
+					});
+				} else {
+					throw new AV.Cloud.Error("Room already full!");
+				}
+			});
 		}
-	}, function(error) {
-		throw new AV.Cloud.Error("Find room happen error: " + error);
 	});
-	
 });
 
 
@@ -55,36 +50,49 @@ AV.Cloud.define('updatePlayerRoomId', function(request) {
  */
 AV.Cloud.afterUpdate('Players', function(request) {
 	/*
-	 * If players status all ready and change room status to READY by id
+	 * Players uodaste status 
+	 * Change room ready player num
+	 * If all players ready, change room status
 	 */
 	if (request.object.updatedKeys.indexOf('status') != -1) {
-		var roomStatus;
-		var totalPlayers, totalReadys;
-		var roomId = request.object.get('roomId');
-		var query = new AV.Query('Players');
-		query.equalTo('roomId', roomId);
-		query.count().then(function(count) {
-			totalPlayers = count;
+		if (request.object.get('roomId') != "undefined") {
 
-			query.equalTo('status', 'READY');
-			query.count().then(function(readyCount) {
-				totalReadys = readyCount;
+			var roomStatus, totalPlayers, totalReadys;
+			var roomId = request.object.get('roomId');
+			
+			var playerQuery = new AV.Query('Players');
+			playerQuery.equalTo('roomId', roomId);
+			playerQuery.count().then(function(count) {
+				totalPlayers = count;
+				playerQuery.equalTo('status', 'READY');
 
-				console.log("Total players " + totalPlayers + ", total ready:" + totalReadys + " in room " + roomId);
-				if (totalPlayers == totalReadys) {
-					roomStatus = 'READY';
-				} else {
-					roomStatus = 'WAIT';
-				}
-				var roomQuery = new AV.Query('Rooms');
-				roomQuery.get(roomId).then(function(room) {
-					room.set('status', roomStatus);
-					room.save();
-					console.log("Update room " + roomId + " status to " + roomStatus + "!")
-				}, function(error) {
-					console.error(error);
+				var bankerQuery = new AV.Query('Players');
+				bankerQuery.equalTo('roomId', roomId);
+				bankerQuery.equalTo('status', "BANK");
+
+				var query = AV.Query.or(playerQuery, bankerQuery);
+				query.count().then(function(readyCount) {
+					totalReadys = readyCount;
+
+					if (totalPlayers == totalReadys) {
+						roomStatus = 'READY';
+					} else {
+						roomStatus = 'IDLE';
+					}
+					var roomQuery = new AV.Query('Rooms');
+					roomQuery.get(roomId).then(function(room) {
+						room.set('status', roomStatus);
+						room.set('playerCount', totalPlayers);
+						room.set('readyCount', totalReadys);
+						room.save();
+						console.log("Update room " + roomId + " status to " + roomStatus + "!")
+					}, function(error) {
+						console.error(error);
+					});
+
+					console.log("Total players " + totalPlayers + ", total ready:" + totalReadys + " in room " + roomId);
 				});
 			});
-		});
+		}
 	}
 });
