@@ -1,26 +1,17 @@
 var AV = require('leanengine');
 
-/**
- * David game room leancloud functions
- */
-AV.Cloud.define('updateRoomStatus', function(request) {
-	var sql = 'UPDATE Rooms set status = "' + request.params.status  + '" where objectId = "' + request.params.objectId  + '"'
-	AV.Query.doCloudQuery(sql).then(function(data) {
-		console.log('SQL: ' + sql);
-		console.log(data.results);
-	}, function(error) {
-		console.error(error);
-	});
-});
 
 /*
- * Update player room id
+ * Join room function: update player room id
  * 1. Check room exists or not
  * 2. Check room status is IDLE or not
  * 3. Check total palyer less than 4 or not
  *
+ * @oaram roomId
+ * @param playerId(userId)
+ *
  */
-AV.Cloud.define('updatePlayerRoomId', function(request) {
+AV.Cloud.define('joinRoom', function(request) {
 	var roomId = request.params.roomId;
 	var playerId = request.params.playerId;
 
@@ -48,6 +39,76 @@ AV.Cloud.define('updatePlayerRoomId', function(request) {
 			});
 		}
 	});
+});
+
+
+/*
+ * Leave room function: clear room id and status
+ * @param roomId
+ * @param playerId(userId)
+ *
+ */
+AV.Cloud.define('leaveRoom', function(request) {
+	var roomId = request.params.roomId;
+	var playerId = request.params.playerId;
+
+	var roomQuery = new AV.Query('Rooms');
+	roomQuery.equalTo('objectId', roomId);
+	return roomQuery.first().then(function(room) {
+		var playerQuery = new AV.Query('Players');
+		playerQuery.equalTo('userId', playerId);
+		return playerQuery.first().then(function(player) {
+			player.set('roomId', "");
+			player.set('status', "");	
+			player.save();
+			return "SUCCESS";
+		});
+	});
+});
+
+
+/*
+ * Playing cards function: update player cards
+ * @param roomId
+ * @param playerId(userId)
+ */
+AV.Cloud.define('playingCards', function(request) {
+	var roomId = request.params.roomId;
+	var playerId = request.params.playerId;
+
+	var roomQuery = new AV.Query('Rooms');
+	roomQuery.equalTo('objectId', roomId);
+	return roomQuery.first().then(function(room) {
+		if (room.get('status') == 'READY') {
+			var playerQuery = new AV.Query('Players');
+			playerQuery.equalTo('roomId', roomId);
+			playerQuery.equalTo('userId', playerId);
+			return playerQuery.first().then(function(player) {
+				if (player.get('status') == "BANK") {
+
+					var query = new AV.Query('Players');
+					query.equalTo('roomId', roomId);
+
+					return query.find().then(function(results) {
+						var cards = generateCard(results.length * 5);
+						for (var idx = results.length - 1; idx >= 0; idx--) {
+							var theCards = new Array();
+							var thePlayer = results[idx];
+							var i = 0;
+							while (i<5) {
+								theCards.push(cards.pop());
+								i++;
+							}
+							thePlayer.set('cards', theCards);
+							thePlayer.save();
+						}
+						return "SUCCESS";
+					});
+				}
+			});
+		}
+	});
+
 });
 
 
@@ -103,3 +164,23 @@ AV.Cloud.afterUpdate('Players', function(request) {
 		}
 	}
 });
+
+
+/*
+ * Generate card num, no repeat
+ * @param count: total card num
+ */
+function generateCard(count) {
+	var cards = new Array();
+	while (cards.length < count) {
+		var cardType = Math.floor(Math.random() * 4) + 1;
+		var cardNum = Math.floor(Math.random() * 13) + 1;
+		var card = cardType * 100 + cardNum;
+		var hasCard = (cards.indexOf(card) >= 0);
+		if (!hasCard) {
+			cards.push(card);
+		}
+	}
+	console.log("Generate card list: " + cards);
+	return cards;
+}
