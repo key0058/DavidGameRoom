@@ -41,6 +41,28 @@ lean up
 lean deploy
 ```
 
+## Function
+### joinRoom 加入房间，更新房号
+参数：roomId，playerId（userId）
+成功返回：SUCCESS
+错误则抛出异常
+
+### leaveRoom 离开房间，清除房号
+参数：roomId，playerId（userId）
+成功返回：SUCCESS
+错误则抛出异常
+
+### playingCards 开始游戏，根据人数各派5张牌
+参数：roomId，playerId（userId）
+成功返回：SUCCESS
+错误则抛出异常
+
+## Hook
+### afterUpdate 对象 Players.status
+所有玩家准备，房间状态为READY
+部分玩家准备，房间状态为IDLE
+同时更新玩家数和准备玩家数
+
 ## 相关文档
 
 * [云函数开发指南](https://leancloud.cn/docs/leanengine_cloudfunction_guide-node.html)
