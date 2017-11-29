@@ -13,6 +13,13 @@ AV.Cloud.define('updateRoomStatus', function(request) {
 	});
 });
 
+/*
+ * Update player room id
+ * 1. Check room exists or not
+ * 2. Check room status is IDLE or not
+ * 3. Check total palyer less than 4 or not
+ *
+ */
 AV.Cloud.define('updatePlayerRoomId', function(request) {
 	var roomId = request.params.roomId;
 	var playerId = request.params.playerId;
@@ -24,7 +31,7 @@ AV.Cloud.define('updatePlayerRoomId', function(request) {
 			var playerQuery = new AV.Query('Players');
 			playerQuery.equalTo('roomId', roomId);
 			return playerQuery.count().then(function(count) {
-				if (count < 3) {
+				if (count < 4) {
 					var query = new AV.Query('Players');
 					query.equalTo('userId', playerId);
 					return query.first().then(function(player) {
