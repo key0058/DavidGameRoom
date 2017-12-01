@@ -192,7 +192,7 @@ AV.Cloud.afterUpdate('Players', function(request) {
 						});
 					});
 				// }
-			});
+			// });
 		}
 	}
 });
