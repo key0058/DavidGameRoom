@@ -62,6 +62,8 @@ AV.Cloud.define('leaveRoom', function(request) {
 			player.set('status', "");	
 			player.set('cards', "");
 			player.save();
+
+			console.log('Player ' + playerId + ' leave room and clean info');
 			return "SUCCESS";
 		});
 	});
@@ -133,38 +135,63 @@ AV.Cloud.afterUpdate('Players', function(request) {
 			var roomStatus, totalPlayers, totalReadys;
 			var roomId = request.object.get('roomId');
 			
-			var playerQuery = new AV.Query('Players');
-			playerQuery.equalTo('roomId', roomId);
-			playerQuery.count().then(function(count) {
-				totalPlayers = count;
-				playerQuery.equalTo('status', 'READY');
+			var roomQuery = new AV.Query('Rooms');
+			roomQuery.equalTo('objectId', roomId);
 
-				var bankerQuery = new AV.Query('Players');
-				bankerQuery.equalTo('roomId', roomId);
-				bankerQuery.equalTo('status', "BANK");
-
-				var query = AV.Query.or(playerQuery, bankerQuery);
-				query.count().then(function(readyCount) {
-					totalReadys = readyCount;
-
-					if (totalPlayers == totalReadys) {
-						roomStatus = 'READY';
-					} else {
-						roomStatus = 'IDLE';
-					}
-					var roomQuery = new AV.Query('Rooms');
-					roomQuery.get(roomId).then(function(room) {
-						room.set('status', roomStatus);
-						room.set('playerCount', totalPlayers);
-						room.set('readyCount', totalReadys);
-						room.save();
-						console.log("Update room " + roomId + " status to " + roomStatus + "!")
-					}, function(error) {
-						console.error(error);
+			roomQuery.find().then(function(thisRoom) {
+				if (thisRoom.get('status') == 'PLAY') {
+					var playerQuery = new AV.Query('Players');
+					playerQuery.equalTo('roomId', roomId);
+					playerQuery.equalTo('status', 'END');
+					playerQuery.count().then(function(count) {
+						if ((count + 1) == room.get('playerCount')) {
+							roomStatus = 'END'
+							var roomQuery = new AV.Query('Rooms');
+							roomQuery.get(roomId).then(function(room) {
+								room.set('status', roomStatus);
+								room.set('readyCount', '1');
+								room.save();
+								console.log("Update room " + roomId + " status to " + roomStatus + "!")
+							}, function(error) {
+								console.error(error);
+							});
+						}
 					});
+				} else {
+					var playerQuery = new AV.Query('Players');
+					playerQuery.equalTo('roomId', roomId);
+					playerQuery.count().then(function(count) {
+						totalPlayers = count;
+						playerQuery.equalTo('status', 'READY');
 
-					console.log("Total players " + totalPlayers + ", total ready:" + totalReadys + " in room " + roomId);
-				});
+						var bankerQuery = new AV.Query('Players');
+						bankerQuery.equalTo('roomId', roomId);
+						bankerQuery.equalTo('status', "BANK");
+
+						var query = AV.Query.or(playerQuery, bankerQuery);
+						query.count().then(function(readyCount) {
+							totalReadys = readyCount;
+
+							if (totalPlayers == totalReadys) {
+								roomStatus = 'READY';
+							} else {
+								roomStatus = 'IDLE';
+							}
+							var roomQuery = new AV.Query('Rooms');
+							roomQuery.get(roomId).then(function(room) {
+								room.set('status', roomStatus);
+								room.set('playerCount', totalPlayers);
+								room.set('readyCount', totalReadys);
+								room.save();
+								console.log("Update room " + roomId + " status to " + roomStatus + "!")
+							}, function(error) {
+								console.error(error);
+							});
+
+							console.log("Total players " + totalPlayers + ", total ready:" + totalReadys + " in room " + roomId);
+						});
+					});
+				}
 			});
 		}
 	}
