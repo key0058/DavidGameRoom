@@ -79,7 +79,7 @@ AV.Cloud.define('playingCards', function(request) {
 	var roomQuery = new AV.Query('Rooms');
 	roomQuery.equalTo('objectId', roomId);
 	return roomQuery.first().then(function(room) {
-		if (room.get('status') == 'READY') {
+		// if (room.get('status') == 'READY') {
 			var playerQuery = new AV.Query('Players');
 			playerQuery.equalTo('roomId', roomId);
 			playerQuery.equalTo('userId', playerId);
@@ -106,7 +106,7 @@ AV.Cloud.define('playingCards', function(request) {
 					});
 				}
 			});
-		}
+		// }
 	});
 
 });
