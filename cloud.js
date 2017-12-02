@@ -15,6 +15,8 @@ AV.Cloud.define('joinRoom', function(request) {
 	var roomId = request.params.roomId;
 	var playerId = request.params.playerId;
 
+	console.log("[joinRoom] " + playerId + " join " + roomId)
+
 	var roomQuery = new AV.Query('Rooms');
 	roomQuery.equalTo('objectId', roomId);
 	return roomQuery.first().then(function(room) {
@@ -138,21 +140,13 @@ AV.Cloud.define('playingCards', function(request) {
  * David game room leancloud hooks
  */
 AV.Cloud.afterUpdate('Players', function(request) {
-	/*
-	 * Players uodaste status 
-	 * Change room ready player num
-	 * If all players ready, change room status
-	 */
+
 	if (request.object.updatedKeys.indexOf('status') != -1) {
-		var playerStatus = request.object.get('status')
-		var playerRoomId = request.object.get('roomId')
 
-		// Reset player if it's status change to idle.
-		// if(playerStatus === 'IDLE'){
-		// 	resetPlayer(request.object);
-		// }
+		var playerStatus = request.object.get('status');
+		var playerRoomId = request.object.get('roomId');
 
-		if (playerRoomId != "undefined") {
+		if (playerRoomId != "" && playerRoomId != undefined) {
 
 			var roomStatus, totalPlayers, totalReadys,totalEnds;
 
@@ -162,133 +156,79 @@ AV.Cloud.afterUpdate('Players', function(request) {
 			.notEqualTo('status', 'BANK')
 			.find()
 			.then(function(players) {
-				var nReadyPlayers = 0;
-				var nEndPlayers = 0;
-				var nPlayers = players.lenght;
-				// Count players
-				for(var player of players){
-					var status = player.get('status')
-					if(status === 'READY'){
-						totalReadys++;
-					} else if(status === 'END'){
-						totalEnds++;
-					}
-				}
-
 				new AV.Query('Rooms')
 					.get(playerRoomId)
 					.then(function(room) {
 
-						var roomStatusBefore = room.get('status');
-						var roomNewStatus = '';
+						updateRoomStatus(players, room);
 
-						switch(roomStatusBefore){
-							case 'IDLE': {
-								if(nReadyPlayers == nPlayers){ // if all players are "Ready" status
-									roomNewStatus = 'READY'
-									room.set('status', roomStatus);
-									room.set('playerCount', nPlayers);
-									room.set('readyCount', nReadyPlayers);
-									room.save();
-									console.log("Update room " + playerRoomId + " status to " + roomNewStatus + "!")
-								}
-								break;
-							}
-							
-							case 'READY': {
-								if(nReadyPlayers != nPlayers){ // if all players are "Ready" status
-									roomNewStatus = 'IDLE'
-									room.set('status', roomStatus);
-									room.set('playerCount', nPlayers);
-									room.set('readyCount', nReadyPlayers);
-									room.save();
-									console.log("Update room " + playerRoomId + " status to " + roomNewStatus + "!")
-								}
-								break;
-							}
-							case 'PLAY':{
-								if(nEndPlayers != nPlayers){ // if all players are "Ready" status
-									roomNewStatus = 'END'
-									room.set('status', roomStatus);
-									room.set('playerCount', nPlayers);
-									room.set('readyCount', nReadyPlayers);
-									room.save();
-									console.log("Update room " + playerRoomId + " status to " + roomNewStatus + "!")
-								}
-								break;
-							}
-							case 'END':{
-								break;	
-							}
-							
-						}
+						
 					}, function(error) {
 						console.error(error);
 					});
-
 			});
-			
-			// var roomQuery = new AV.Query('Rooms');
-			// roomQuery.equalTo('objectId', roomId);
-
-			// roomQuery.find().then(function(thisRoom) {
-			// 	if (thisRoom.get('status') == 'PLAY') {
-			// 		var playerQuery = new AV.Query('Players');
-			// 		playerQuery.equalTo('roomId', roomId);
-			// 		playerQuery.equalTo('status', 'END');
-			// 		playerQuery.count().then(function(count) {
-			// 			if ((count + 1) == room.get('playerCount')) {
-			// 				roomStatus = 'END'
-			// 				var roomQuery = new AV.Query('Rooms');
-			// 				roomQuery.get(roomId).then(function(room) {
-			// 					room.set('status', roomStatus);
-			// 					room.set('readyCount', '1');
-			// 					room.save();
-			// 					console.log("Update room " + roomId + " status to " + roomStatus + "!")
-			// 				}, function(error) {
-			// 					console.error(error);
-			// 				});
-			// 			}
-			// 		});
-			// 	} else {
-					// var playerQuery = new AV.Query('Players');
-					// playerQuery.equalTo('roomId', playerRoomId);
-					// playerQuery.count().then(function(count) {
-					// 	totalPlayers = count;
-					// 	playerQuery.equalTo('status', 'READY');
-
-					// 	var bankerQuery = new AV.Query('Players');
-					// 	bankerQuery.equalTo('roomId', playerRoomId);
-					// 	bankerQuery.equalTo('status', "BANK");
-
-					// 	var query = AV.Query.or(playerQuery, bankerQuery);
-					// 	query.count().then(function(readyCount) {
-					// 		totalReadys = readyCount;
-
-					// 		if (totalPlayers == totalReadys) {
-					// 			roomStatus = 'READY';
-					// 		} else {
-					// 			roomStatus = 'IDLE';
-					// 		}
-					// 		var roomQuery = new AV.Query('Rooms');
-					// 		roomQuery.get(playerRoomId).then(function(room) {
-					// 			room.set('status', roomStatus);
-					// 			room.set('playerCount', totalPlayers);
-					// 			room.set('readyCount', totalReadys);
-					// 			room.save();
-					// 			console.log("Update room " + playerRoomId + " status to " + roomStatus + "!")
-					// 		}, function(error) {
-					// 			console.error(error);
-					// 		});
-
-					// 		console.log("Total players " + totalPlayers + ", total ready:" + totalReadys + " in room " + playerRoomId);
-					// 	});
-					// });
-				// }
-			// });
 		}
 	}
 });
+
+function updateRoomStatus(players,room){
+	var nReadyPlayers = 0;
+	var nEndPlayers = 0;
+	var nPlayers = players.lenght;
+	// Count players
+	for(var player of players){
+		var status = player.get('status')
+		if(status === 'READY'){
+			totalReadys++;
+		} else if(status === 'END'){
+			totalEnds++;
+		}
+	}
+
+	var roomStatusBefore = room.get('status');
+	var roomNewStatus = '';
+
+	switch(roomStatusBefore){
+		case 'IDLE': {
+			if(nReadyPlayers == nPlayers){ // if all players are "Ready" status
+				roomNewStatus = 'READY'
+				room.set('status', roomStatus);
+				room.set('playerCount', nPlayers);
+				room.set('readyCount', nReadyPlayers);
+				room.save();
+				console.log("Update room " + playerRoomId + " status to " + roomNewStatus + "!")
+			}
+			break;
+		}
+		
+		case 'READY': {
+			if(nReadyPlayers != nPlayers){ // if all players are "Ready" status
+				roomNewStatus = 'IDLE'
+				room.set('status', roomStatus);
+				room.set('playerCount', nPlayers);
+				room.set('readyCount', nReadyPlayers);
+				room.save();
+				console.log("Update room " + playerRoomId + " status to " + roomNewStatus + "!")
+			}
+			break;
+		}
+		case 'PLAY':{
+			if(nEndPlayers != nPlayers){ // if all players are "Ready" status
+				roomNewStatus = 'END'
+				room.set('status', roomStatus);
+				room.set('playerCount', nPlayers);
+				room.set('readyCount', nReadyPlayers);
+				room.save();
+				console.log("Update room " + playerRoomId + " status to " + roomNewStatus + "!")
+			}
+			break;
+		}
+		case 'END':{
+			break;	
+		}
+		
+	}		
+}
 
 
 /*
