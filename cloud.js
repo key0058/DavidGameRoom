@@ -33,6 +33,7 @@ AV.Cloud.define('joinRoom', function(request) {
 							player.set('status', "IDLE");	
 						}
 						player.save();
+						room.increment('msgCount', 1).save();
 						return "SUCCESS";
 					});
 				} else {
@@ -146,6 +147,8 @@ AV.Cloud.afterUpdate('Players', function(request) {
 		var playerStatus = request.object.get('status');
 		var playerRoomId = request.object.get('roomId');
 
+		console.log("[afterUpdate] player update status to " + playerStatus);
+
 		if (playerRoomId != "" && playerRoomId != undefined) {
 
 			var roomStatus, totalPlayers, totalReadys,totalEnds;
@@ -156,13 +159,11 @@ AV.Cloud.afterUpdate('Players', function(request) {
 			.notEqualTo('status', 'BANK')
 			.find()
 			.then(function(players) {
+				console.log("[afterUpdate] find " + players.length + " players");
 				new AV.Query('Rooms')
 					.get(playerRoomId)
 					.then(function(room) {
-
 						updateRoomStatus(players, room);
-
-						
 					}, function(error) {
 						console.error(error);
 					});
@@ -174,7 +175,7 @@ AV.Cloud.afterUpdate('Players', function(request) {
 function updateRoomStatus(players,room){
 	var nReadyPlayers = 0;
 	var nEndPlayers = 0;
-	var nPlayers = players.lenght;
+	var nPlayers = players.length;
 	// Count players
 	for(var player of players){
 		var status = player.get('status')
