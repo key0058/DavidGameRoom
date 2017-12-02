@@ -66,6 +66,7 @@ AV.Cloud.define('leaveRoom', function(request) {
 			.then(function (_room) {
 			    room = _room;
 			    room.set('status','IDLE').save();
+				room.increment('msgCount', 1).save();
 			    return "SUCCESS";
 			  }, function (error) {
 			  });
@@ -150,20 +151,22 @@ AV.Cloud.afterUpdate('Players', function(request) {
 		console.log("[afterUpdate] player update status to " + playerStatus);
 
 		if (playerRoomId != "" && playerRoomId != undefined) {
-
-			var roomStatus, totalPlayers, totalReadys,totalEnds;
-
 			// Find all players in the room excluding banker
 			new AV.Query('Players')
 			.equalTo('roomId', playerRoomId)
 			.notEqualTo('status', 'BANK')
-			.find()
-			.then(function(players) {
+			.find().then(function(players) {
 				console.log("[afterUpdate] find " + players.length + " players in room " + playerRoomId);
 				new AV.Query('Rooms')
 					.get(playerRoomId)
 					.then(function(room) {
+
+						// 通知所有玩家更新界面
+						room.increment('msgCount', 1).save();
+
+						// 根据玩家状态，更新房间状态
 						updateRoomStatus(players, room);
+
 					}, function(error) {
 						console.error(error);
 					});
