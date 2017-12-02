@@ -181,9 +181,9 @@ function updateRoomStatus(players,room){
 	for(var player of players){
 		var status = player.get('status')
 		if(status === 'READY'){
-			totalReadys++;
+			nReadyPlayers++;
 		} else if(status === 'END'){
-			totalEnds++;
+			nEndPlayers++;
 		}
 	}
 
