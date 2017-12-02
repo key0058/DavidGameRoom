@@ -229,6 +229,14 @@ function updateRoomStatus(players,room){
 			break;
 		}
 		case 'END':{
+			if(nReadyPlayers == nPlayers){ // if all players are "Ready" status
+				roomNewStatus = 'READY'
+				room.set('status', roomNewStatus);
+				room.set('playerCount', nPlayers);
+				room.set('readyCount', nReadyPlayers);
+				room.save();
+				console.log("Update room " + room.id + " status to " + roomNewStatus + "!")
+			}
 			break;	
 		}
 		
