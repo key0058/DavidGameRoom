@@ -215,7 +215,7 @@ function updateRoomStatus(players,room){
 			break;
 		}
 		case 'PLAY':{
-			if(nEndPlayers != nPlayers){ // if all players are "Ready" status
+			if(nEndPlayers == nPlayers){ // if all players are "Ready" status
 				roomNewStatus = 'END'
 				room.set('status', roomNewStatus);
 				room.set('playerCount', nPlayers);
