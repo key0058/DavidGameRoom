@@ -32,8 +32,9 @@ AV.Cloud.define('joinRoom', function(request) {
 						if (player.get('status') != "BANK") {
 							player.set('status', "IDLE");	
 						}
-						player.save();
-						room.increment('msgCount', 1).save();
+						player.save().then(function (todo) {
+          					room.increment('msgCount', 1).save();
+        				});
 						return "SUCCESS";
 					});
 				} else {
