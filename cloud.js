@@ -159,7 +159,7 @@ AV.Cloud.afterUpdate('Players', function(request) {
 			.notEqualTo('status', 'BANK')
 			.find()
 			.then(function(players) {
-				console.log("[afterUpdate] find " + players.length + " players");
+				console.log("[afterUpdate] find " + players.length + " players in room " + playerRoomId);
 				new AV.Query('Rooms')
 					.get(playerRoomId)
 					.then(function(room) {
@@ -173,6 +173,7 @@ AV.Cloud.afterUpdate('Players', function(request) {
 });
 
 function updateRoomStatus(players,room){
+	console.log('[updateRoomStatus]')
 	var nReadyPlayers = 0;
 	var nEndPlayers = 0;
 	var nPlayers = players.length;
@@ -193,11 +194,11 @@ function updateRoomStatus(players,room){
 		case 'IDLE': {
 			if(nReadyPlayers == nPlayers){ // if all players are "Ready" status
 				roomNewStatus = 'READY'
-				room.set('status', roomStatus);
+				room.set('status', roomNewStatus);
 				room.set('playerCount', nPlayers);
 				room.set('readyCount', nReadyPlayers);
 				room.save();
-				console.log("Update room " + playerRoomId + " status to " + roomNewStatus + "!")
+				console.log("Update room " + room.id + " status to " + roomNewStatus + "!")
 			}
 			break;
 		}
@@ -205,22 +206,22 @@ function updateRoomStatus(players,room){
 		case 'READY': {
 			if(nReadyPlayers != nPlayers){ // if all players are "Ready" status
 				roomNewStatus = 'IDLE'
-				room.set('status', roomStatus);
+				room.set('status', roomNewStatus);
 				room.set('playerCount', nPlayers);
 				room.set('readyCount', nReadyPlayers);
 				room.save();
-				console.log("Update room " + playerRoomId + " status to " + roomNewStatus + "!")
+				console.log("Update room " + room.id + " status to " + roomNewStatus + "!")
 			}
 			break;
 		}
 		case 'PLAY':{
 			if(nEndPlayers != nPlayers){ // if all players are "Ready" status
 				roomNewStatus = 'END'
-				room.set('status', roomStatus);
+				room.set('status', roomNewStatus);
 				room.set('playerCount', nPlayers);
 				room.set('readyCount', nReadyPlayers);
 				room.save();
-				console.log("Update room " + playerRoomId + " status to " + roomNewStatus + "!")
+				console.log("Update room " + room.id + " status to " + roomNewStatus + "!")
 			}
 			break;
 		}
