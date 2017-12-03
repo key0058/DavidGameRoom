@@ -1,45 +1,5 @@
-# Node.js Getting started
-在 LeanCloud 云引擎上使用 Express 的 Node.js 实例项目。
-
-## 一键部署
-[![Deploy to LeanEngine](http://ac-32vx10b9.clouddn.com/109bd02ee9f5875a.png)](https://leancloud.cn/1.1/engine/deploy-button)
-
-## 本地运行
-
-首先确认本机已经安装 [Node.js](http://nodejs.org/) 运行环境和 [LeanCloud 命令行工具](https://leancloud.cn/docs/leanengine_cli.html)，然后执行下列指令：
-
-```
-$ git clone https://github.com/leancloud/node-js-getting-started.git
-$ cd node-js-getting-started
-```
-
-安装依赖：
-
-```
-npm install
-```
-
-登录并关联应用：
-
-```
-lean login
-lean switch
-```
-
-启动项目：
-
-```
-lean up
-```
-
-之后你就可以在 [localhost:3000](http://localhost:3000) 访问到你的应用了。
-
-## 部署到 LeanEngine
-
-部署到预备环境（若无预备环境则直接部署到生产环境）：
-```
-lean deploy
-```
+# David Game Room
+一个简单扑克游戏的云服务端代码
 
 ## Function
 ### joinRoom 加入房间，更新房号
@@ -66,8 +26,16 @@ lean deploy
 ## Hook
 ### afterUpdate 对象 Players.status
 ```
-所有玩家准备，房间状态为READY
-部分玩家准备，房间状态为IDLE
+统计
+1. 玩家数
+2. 准备玩家数
+3. 完结玩家数
+
+当房间为IDLE  --> 玩家与准备相同   --> 则状态更改为READY
+当房间为READY --> 玩家与准备不相同 --> 则状态更改为IDLE
+当房间为PLAY  --> 玩家与完结相同   --> 则状态更改为END
+当房间为END   --> 玩家与准备相同   --> 则状态更改为READY
+
 同时更新玩家数和准备玩家数
 ```
 
